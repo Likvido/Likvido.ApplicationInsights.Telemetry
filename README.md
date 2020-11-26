@@ -1,1 +1,1 @@
-# Likvido.Telemetry
+# Likvido.ApplicationInsights.Telemetry
