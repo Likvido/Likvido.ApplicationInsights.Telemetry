@@ -16,6 +16,6 @@ namespace Likvido.ApplicationInsights.Telemetry
         }
 
         public Func<Task> Func { get; }
-        public Func<Task>? PostExecute { get; }
+        public Func<Task>? PostExecute { get; set; }
     }
 }
