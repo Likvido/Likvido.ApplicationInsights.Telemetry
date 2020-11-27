@@ -18,7 +18,7 @@ jobs:
         uses: brandedoutcast/publish-nuget@v2.5.5
         with:
           PROJECT_FILE_PATH: src/Likvido.ApplicationInsights.Telemetry/Likvido.ApplicationInsights.Telemetry.csproj
-          VERSION_FILE_PATH: version.props
+          VERSION_FILE_PATH: src/version.props
           PACKAGE_NAME: Likvido.ApplicationInsights.Telemetry
           VERSION_REGEX: <Version>(.*)<\/Version>
           NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
