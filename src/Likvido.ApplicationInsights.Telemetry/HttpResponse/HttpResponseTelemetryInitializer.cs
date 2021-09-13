@@ -37,24 +37,22 @@ namespace Likvido.ApplicationInsights.Telemetry
         private void Initialize(DependencyTelemetry telemetry)
         {
             // Check if telemetry is for http response.
-            if (telemetry.Type != "Http" ||
-                !telemetry.TryGetOperationDetail("HttpResponse", out var httpResponseObj) ||
-                !(httpResponseObj is HttpResponseMessage httpResponse))
+            if (telemetry.Type == "Http" &&
+                telemetry.TryGetOperationDetail("HttpResponse", out var httpResponseObj) &&
+                httpResponseObj is HttpResponseMessage httpResponse)
             {
-                return;
+                TryEnrichWithContentProperty(
+                    telemetry,
+                    httpResponse.StatusCode,
+                    HttpResponseCustomProperty.ResponseContent,
+                    httpResponse.Content);
+
+                TryEnrichWithContentProperty(
+                    telemetry,
+                    httpResponse.StatusCode,
+                    HttpResponseCustomProperty.RequestContent,
+                    httpResponse.RequestMessage.Content);
             }
-
-            TryEnrichWithContentProperty(
-                telemetry,
-                httpResponse.StatusCode,
-                HttpResponseCustomProperty.ResponseContent,
-                httpResponse.Content);
-
-            TryEnrichWithContentProperty(
-                telemetry,
-                httpResponse.StatusCode,
-                HttpResponseCustomProperty.RequestContent,
-                httpResponse.RequestMessage.Content);
         }
 
         private void TryEnrichWithContentProperty(
@@ -66,7 +64,7 @@ namespace Likvido.ApplicationInsights.Telemetry
             if (_condition(new HttpResponseTelemetryConditionInfo(telemetry, property, statusCode)) &&
                 TryReadContentString(content, out var contentString))
             {
-                telemetry.AddChunckedCustomProperty(property.ToString(), contentString!);
+                telemetry.AddChunkedCustomProperty(property.ToString(), contentString!);
             }
         }
 

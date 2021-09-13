@@ -8,10 +8,10 @@ namespace Likvido.ApplicationInsights.Telemetry
         private const int PropertyMaxLength = 8192;
 
         /// <summary>
-        /// Split long property values in chuncks.
+        /// Split long property values in chunks.
         /// Appinsights has a property length limit.
         /// </summary>
-        public static void AddChunckedCustomProperty(this OperationTelemetry telemetry, string key, string value)
+        public static void AddChunkedCustomProperty(this OperationTelemetry telemetry, string key, string value)
         {
             if (telemetry == null || value == null)
             {
@@ -25,9 +25,9 @@ namespace Likvido.ApplicationInsights.Telemetry
             else
             {
                 for (
-                    int i = 1, chunckStart = 0;
-                    i < 4 && chunckStart < value.Length;
-                    i++, chunckStart += PropertyMaxLength)
+                    int i = 1, chunkStart = 0;
+                    i < 4 && chunkStart < value.Length;
+                    i++, chunkStart += PropertyMaxLength)
                 {
                     telemetry.Properties.Add($"{key}-{i}", value.Substring(i, Math.Min(PropertyMaxLength, value.Length - i)));
                 }
