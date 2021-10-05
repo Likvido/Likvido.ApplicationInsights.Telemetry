@@ -29,7 +29,7 @@ namespace Likvido.ApplicationInsights.Telemetry
                     i < 4 && chunkStart < value.Length;
                     i++, chunkStart += PropertyMaxLength)
                 {
-                    telemetry.Properties.Add($"{key}-{i}", value.Substring(i, Math.Min(PropertyMaxLength, value.Length - i)));
+                    telemetry.Properties.Add($"{key}-{i}", value.Substring(chunkStart, Math.Min(PropertyMaxLength, value.Length - chunkStart)));
                 }
             }
         }
