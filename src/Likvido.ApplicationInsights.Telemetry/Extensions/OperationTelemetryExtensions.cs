@@ -1,36 +1,52 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.ApplicationInsights.Extensibility.Implementation;
 
 namespace Likvido.ApplicationInsights.Telemetry
 {
     internal static class OperationTelemetryExtensions
     {
-        private const int PropertyMaxLength = 8192;
+        // Application insights limits:
+        // https://github.com/MicrosoftDocs/azure-docs/blob/master/includes/application-insights-limits.md
+        private const int PropertyValueMaxLength = 8192;
+        private const int CustomPropertiesTotalMaxLength = 25000; // Try to not exeed the total message length (32768).
 
-        /// <summary>
-        /// Split long property values in chunks.
-        /// Appinsights has a property length limit.
-        /// </summary>
-        public static void AddChunkedCustomProperty(this OperationTelemetry telemetry, string key, string value)
+        public static void AddCustomProperties(
+            this OperationTelemetry telemetry,
+            IEnumerable<(string Key, string Value)> properties)
         {
-            if (telemetry == null || value == null)
-            {
-                return;
-            }
+            var chunkedProperties = properties
+                .Where(prop => !string.IsNullOrWhiteSpace(prop.Value))
+                .OrderBy(prop => prop.Value.Length) // Add smaller property values first.
+                .SelectMany(ChunkProperty);
 
-            if (value.Length <= PropertyMaxLength)
+            var lengthLeft = CustomPropertiesTotalMaxLength;
+            foreach (var prop in chunkedProperties)
             {
-                telemetry.Properties.Add(key, value);
+                // Index property keys.
+                var propKey = prop.Index == 1
+                    ? prop.Key
+                    : $"{prop.Key}-{prop.Index}";
+
+                // Trim value if total length exeeded.
+                var propValue = lengthLeft < prop.Value.Length
+                    ? $"{prop.Value.Substring(0, Math.Max(lengthLeft, 0))}\n--trimmed"
+                    : prop.Value;
+
+                telemetry.Properties.Add(propKey, propValue);
+                lengthLeft -= prop.Value.Length;
             }
-            else
+        }
+
+        private static IEnumerable<(string Key, int Index, string Value)> ChunkProperty((string Key, string Value) prop)
+        {
+            for (
+                int chunkStart = 0, i = 1;
+                chunkStart < prop.Value.Length;
+                chunkStart += PropertyValueMaxLength, i++)
             {
-                for (
-                    int i = 1, chunkStart = 0;
-                    i < 4 && chunkStart < value.Length;
-                    i++, chunkStart += PropertyMaxLength)
-                {
-                    telemetry.Properties.Add($"{key}-{i}", value.Substring(chunkStart, Math.Min(PropertyMaxLength, value.Length - chunkStart)));
-                }
+                yield return (prop.Key, i, prop.Value.Substring(chunkStart, Math.Min(PropertyValueMaxLength, prop.Value.Length - chunkStart)));
             }
         }
     }
