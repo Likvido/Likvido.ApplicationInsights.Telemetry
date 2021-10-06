@@ -14,8 +14,9 @@ namespace Likvido.ApplicationInsights.Telemetry
     public class HttpResponseTelemetryInitializer : ITelemetryInitializer
     {
         private readonly Func<HttpResponseTelemetryConditionInfo, bool> _condition;
+        private readonly Func<string, bool> _contentMediaTypesCheck = (mediaType) => ContentMediaTypes.Contains(mediaType);
 
-        public List<string> ContentMediaTypes { get; } = new List<string>
+        private static readonly List<string> ContentMediaTypes = new List<string>
         {
             "application/json",
             "text/plain",
@@ -30,9 +31,9 @@ namespace Likvido.ApplicationInsights.Telemetry
 
         public HttpResponseTelemetryInitializer(
             Func<HttpResponseTelemetryConditionInfo, bool> condition,
-            List<string> contentMediaTypes) : this(condition)
+            Func<string, bool> contentMediaTypesCheck) : this(condition)
         {
-            ContentMediaTypes = contentMediaTypes;
+            _contentMediaTypesCheck = contentMediaTypesCheck ?? throw new ArgumentNullException(nameof(contentMediaTypesCheck));
         }
 
         public void Initialize(ITelemetry telemetry)
@@ -93,7 +94,7 @@ namespace Likvido.ApplicationInsights.Telemetry
         {
             try
             {
-                contentString = content.ReadAsStringAsync().GetAwaiter().GetResult();
+                contentString = content.ReadAsStringAsync().ConfigureAwait(false).GetAwaiter().GetResult();
                 return true;
             }
             catch (Exception ex)
@@ -106,7 +107,7 @@ namespace Likvido.ApplicationInsights.Telemetry
         private bool IsValidMediaType(HttpContentHeaders contentHeaders)
         {
             return contentHeaders?.ContentType?.MediaType != null &&
-                ContentMediaTypes.Contains(contentHeaders.ContentType.MediaType);
+                _contentMediaTypesCheck(contentHeaders.ContentType.MediaType);
         }
     }
 }

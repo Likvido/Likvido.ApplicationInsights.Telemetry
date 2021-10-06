@@ -24,29 +24,30 @@ namespace Likvido.ApplicationInsights.Telemetry
             var lengthLeft = CustomPropertiesTotalMaxLength;
             foreach (var prop in chunkedProperties)
             {
-                // Index property keys.
-                var propKey = prop.Index == 1
-                    ? prop.Key
-                    : $"{prop.Key}-{prop.Index}";
-
                 // Trim value if total length exeeded.
                 var propValue = lengthLeft < prop.Value.Length
                     ? $"{prop.Value.Substring(0, Math.Max(lengthLeft, 0))}\n--trimmed"
                     : prop.Value;
 
-                telemetry.Properties.Add(propKey, propValue);
+                telemetry.Properties.Add(prop.Key, propValue);
                 lengthLeft -= prop.Value.Length;
             }
         }
 
-        private static IEnumerable<(string Key, int Index, string Value)> ChunkProperty((string Key, string Value) prop)
+        private static IEnumerable<(string Key, string Value)> ChunkProperty((string Key, string Value) prop)
         {
+            if (prop.Value.Length < PropertyValueMaxLength)
+            {
+                yield return prop;
+                yield break;
+            }
+
             for (
                 int chunkStart = 0, i = 1;
                 chunkStart < prop.Value.Length;
                 chunkStart += PropertyValueMaxLength, i++)
             {
-                yield return (prop.Key, i, prop.Value.Substring(chunkStart, Math.Min(PropertyValueMaxLength, prop.Value.Length - chunkStart)));
+                yield return ($"{prop.Key}_{i}", prop.Value.Substring(chunkStart, Math.Min(PropertyValueMaxLength, prop.Value.Length - chunkStart)));
             }
         }
     }
