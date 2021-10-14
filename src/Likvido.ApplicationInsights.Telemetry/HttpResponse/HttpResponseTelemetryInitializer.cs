@@ -53,8 +53,8 @@ namespace Likvido.ApplicationInsights.Telemetry
 
         private void Initialize(DependencyTelemetry telemetry)
         {
-            // Check if telemetry is for http response.
-            if (telemetry.Type == "Http" &&
+            // Check if telemetry is for `Http` or `Http (tracked component)` type response.
+            if (telemetry.Type.StartsWith("Http", StringComparison.Ordinal) &&
                 telemetry.TryGetOperationDetail("HttpResponse", out var httpResponseObj) &&
                 httpResponseObj is HttpResponseMessage httpResponse)
             {
